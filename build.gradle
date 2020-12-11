@@ -1,0 +1,60 @@
+plugins {
+    id 'java'
+    id 'application'
+    id "com.github.johnrengelman.shadow" version "5.2.0"
+}
+
+group 'com.aruistar'
+version '1.0-SNAPSHOT'
+
+repositories {
+    maven {
+        url "https://oss.sonatype.org/content/repositories/snapshots"
+        mavenContent {
+            snapshotsOnly()
+        }
+    }
+    mavenCentral()
+}
+
+def vertxVersion = "4.0.0"
+def junitJupiterVersion = "5.6.0"
+
+
+def mainVerticleName = "com.aruistar.geekwalk.MainVerticle"
+def watchForChange = "src/**/*"
+def doOnChange = "./gradlew classes"
+def launcherClassName = "io.vertx.core.Launcher"
+
+application {
+    mainClassName = launcherClassName
+}
+
+dependencies {
+    implementation("io.vertx:vertx-core:$vertxVersion")
+    implementation("io.vertx:vertx-web:$vertxVersion")
+
+// https://mvnrepository.com/artifact/com.google.inject/guice
+    compile group: 'com.google.inject', name: 'guice', version: '4.2.3'
+
+
+}
+
+//java {
+//    sourceCompatibility = JavaVersion.VERSION_1_8
+//    targetCompatibility = JavaVersion.VERSION_1_8
+//}
+
+shadowJar {
+    classifier = 'fat'
+    manifest {
+        attributes 'Main-Verticle': mainVerticleName
+    }
+    mergeServiceFiles {
+        include 'META-INF/services/io.vertx.core.spi.VerticleFactory'
+    }
+}
+
+run {
+    args = ['run', mainVerticleName, "--redeploy=$watchForChange", "--launcher-class=$launcherClassName", "--on-redeploy=$doOnChange"]
+}
