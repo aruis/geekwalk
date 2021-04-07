@@ -1,30 +1,30 @@
 package com.aruistar.geekwalk;
 
-import com.aruistar.geekwalk.common.AppRouter;
-import com.google.inject.Inject;
+import com.aruistar.geekwalk.asyncresponse.Controller;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Promise;
-import io.vertx.core.http.HttpServer;
-import io.vertx.ext.web.Router;
+import org.jboss.resteasy.plugins.server.vertx.VertxRegistry;
+import org.jboss.resteasy.plugins.server.vertx.VertxRequestHandler;
+import org.jboss.resteasy.plugins.server.vertx.VertxResteasyDeployment;
 
 
 public class HttpVerticle extends AbstractVerticle {
-    @Inject
-    private AppRouter appRouter;
 
     @Override
     public void start(Promise<Void> startPromise) throws Exception {
-        Router rootRouter = appRouter.getAppRouter();
-        HttpServer server = vertx.createHttpServer();
-        server.requestHandler(rootRouter);
-        server.listen(8080, listen -> {
-            if (listen.succeeded()) {
-                System.out.println("Server listening on http://localhost:8080/");
-            } else {
-                listen.cause().printStackTrace();
-                System.exit(1);
-            }
-        });
+        // Build the Jax-RS hello world deployment
+        VertxResteasyDeployment deployment = new VertxResteasyDeployment();
+        deployment.start();
+        VertxRegistry registry = deployment.getRegistry();
+        registry.addPerInstanceResource(HelloWorldService.class);
+        registry.addPerInstanceResource(Controller.class);
+
+        // Start the front end server using the Jax-RS controller
+        vertx.createHttpServer()
+                .requestHandler(new VertxRequestHandler(vertx, deployment))
+                .listen(8080, ar -> {
+                    System.out.println("Server started on port " + ar.result().actualPort());
+                });
     }
 
 }
