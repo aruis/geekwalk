@@ -11,7 +11,7 @@ public class MainVerticle extends AbstractVerticle {
     }
 
     @Override
-    public void start(Promise<Void> startPromise) throws Exception {
-
+    public void start(Promise<Void> startPromise) {
+        System.out.println("hello");
     }
 }
