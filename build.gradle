@@ -33,13 +33,7 @@ application {
 dependencies {
     implementation("io.vertx:vertx-core:$vertxVersion")
     implementation("io.vertx:vertx-web:$vertxVersion")
-
-    implementation "org.jboss.resteasy:resteasy-vertx:4.6.0.Final"
-
-// https://mvnrepository.com/artifact/com.google.inject/guice
-    compile group: 'com.google.inject', name: 'guice', version: '4.2.3'
-
-
+    implementation("io.vertx:vertx-web-client:$vertxVersion")
 }
 
 //java {

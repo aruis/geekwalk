@@ -8,6 +8,8 @@ public class MainVerticle extends AbstractVerticle {
 
     public static void main(String[] args) {
         Vertx.vertx().deployVerticle(new MainVerticle());
+        Vertx.vertx().deployVerticle(new ServerVerticle());
+        Vertx.vertx().deployVerticle(new ProxyVerticle());
     }
 
     @Override
