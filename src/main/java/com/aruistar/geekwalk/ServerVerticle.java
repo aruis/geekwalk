@@ -28,6 +28,11 @@ public class ServerVerticle extends AbstractVerticle {
                     routingContext.response().end(json.getString("name"));
                 });
 
+        router.errorHandler(500, rc -> {
+            rc.failure().printStackTrace();
+            rc.response().setStatusCode(500).end("我错了");
+        });
+
         server.requestHandler(router).listen(8080, event -> {
             if (event.succeeded()) {
                 System.out.println("启动在8080端口");

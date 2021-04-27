@@ -6,7 +6,9 @@ import io.vertx.core.http.*;
 public class ProxyVerticle extends AbstractVerticle {
     @Override
     public void start() throws Exception {
-        HttpServer server = vertx.createHttpServer();
+        HttpServerOptions serverOptions = new HttpServerOptions();
+        serverOptions.setTcpKeepAlive(true);
+        HttpServer server = vertx.createHttpServer(serverOptions);
 
         HttpClientOptions clientOptions = new HttpClientOptions();
         clientOptions.setDefaultHost("127.0.0.1");
@@ -18,28 +20,26 @@ public class ProxyVerticle extends AbstractVerticle {
         server.requestHandler(req -> {
             HttpServerResponse resp = req.response();
 
-//            resp.end("test");
-//
-//            req.handler(x -> {
-//                System.out.println(x.toString());
+            resp.setChunked(true);
+
+//            client.request(req.method(), req.uri()).compose(req2 -> {
+//                System.out.println(req.isEnded());
+//                return null;
 //            });
 
-
-            resp.setChunked(true);
             client.request(req.method(), req.uri(), ar -> {
                 if (ar.succeeded()) {
                     HttpClientRequest req2 = ar.result();
 
-                    req.handler(x -> {
-                        System.out.println(x.toString());
-                        req2.write(x);
+                    req2.setChunked(true);
+
+                    req.headers().forEach(entry -> {
+                        if (entry.getKey().equals("Content-Type")) {
+                            req2.putHeader(entry.getKey(), entry.getValue());
+                        }
                     });
 
-                    req.endHandler(x -> {
-                        req2.end();
-                    });
-
-                    req2.send(ar2 -> {
+                    req2.response(ar2 -> {
                         if (ar2.succeeded()) {
                             HttpClientResponse resp2 = ar2.result();
 
@@ -52,8 +52,27 @@ public class ProxyVerticle extends AbstractVerticle {
                             resp2.endHandler(x -> {
                                 resp.end();
                             });
+                        } else {
+                            ar2.cause().printStackTrace();
+                            resp.setStatusCode(500).end(ar2.cause().getMessage());
                         }
                     });
+
+                    if (!req.isEnded()) {
+                        req.handler(x -> {
+                            System.out.println(x.toString());
+                            req2.write(x);
+                        });
+
+                        req.endHandler(x -> {
+                            req2.end();
+                        });
+                    } else {
+                        req2.end();
+                    }
+                } else {
+                    ar.cause().printStackTrace();
+                    resp.setStatusCode(500).end(ar.cause().getMessage());
                 }
             });
 
