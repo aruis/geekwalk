@@ -1,7 +1,6 @@
 package com.aruistar.geekwalk;
 
 import io.vertx.core.AbstractVerticle;
-import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.http.*;
 
@@ -64,36 +63,4 @@ public class ProxyVerticle extends AbstractVerticle {
         });
     }
 
-    private Future<HttpClientResponse> requestServer(HttpClient client, HttpServerRequest serverRequest, HttpServerResponse serverResponse) {
-        Promise<HttpClientResponse> promise = Promise.promise();
-
-        client.request(serverRequest.method(), serverRequest.uri(), ar -> {
-            if (ar.succeeded()) {
-                HttpClientRequest clientRequest = ar.result();
-
-                clientRequest.setChunked(true);
-                serverRequest.headers().forEach(entry -> {
-                    if (entry.getKey().equals("Content-Type")) {
-                        clientRequest.putHeader(entry.getKey(), entry.getValue());
-                    }
-                });
-
-                clientRequest.response(ar2 -> {
-                    if (ar2.succeeded()) {
-                        HttpClientResponse resp2 = ar2.result();
-                        promise.complete(resp2);
-                    } else {
-                        ar2.cause().printStackTrace();
-                        promise.fail(ar2.cause().getMessage());
-                    }
-                });
-
-            } else {
-                ar.cause().printStackTrace();
-                promise.fail(ar.cause().getMessage());
-            }
-        });
-
-        return promise.future();
-    }
 }
