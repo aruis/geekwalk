@@ -3,12 +3,11 @@ package com.aruistar.geekwalk;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
-import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
 
 public class ProxyVerticle extends AbstractVerticle {
     @Override
-    public void start() throws Exception {
+    public void start() {
         HttpServerOptions serverOptions = new HttpServerOptions();
         serverOptions.setTcpKeepAlive(true);
         HttpServer server = vertx.createHttpServer(serverOptions);
@@ -26,32 +25,29 @@ public class ProxyVerticle extends AbstractVerticle {
 
             Promise<Void> promise = Promise.promise();
 
-            req.bodyHandler(body -> {
+            req.bodyHandler(body ->
                 client.request(req.method(), req.uri())
-                        .onFailure(error -> promise.fail(error.getMessage()))
-                        .onSuccess(req2 -> {
-                            req.headers().forEach(entry -> {
-                                if (entry.getKey().equals("Content-Type")) {
-                                    req2.putHeader(entry.getKey(), entry.getValue());
-                                }
-                            });
-                            req2.send(body)
-                                    .onFailure(error -> promise.fail(error.getMessage())
-                                    )
-                                    .onSuccess(resp2 -> resp2.body()
-                                            .onFailure(error ->
-                                                    promise.fail(error.getMessage())
-                                            )
-                                            .onSuccess(buffer -> {
-                                                System.out.println(buffer);
-                                                resp.setStatusCode(resp2.statusCode());
-                                                resp.write(buffer);
-                                                promise.complete();
-                                            })
-                                    );
+                    .onFailure(error -> promise.fail(error.getMessage()))
+                    .onSuccess(req2 -> {
+                        req.headers().forEach(entry -> {
+                            if (entry.getKey().equals("Content-Type")) {
+                                req2.putHeader(entry.getKey(), entry.getValue());
+                            }
                         });
-
-            });
+                        req2.send(body)
+                            .onFailure(error -> promise.fail(error.getMessage()))
+                            .onSuccess(resp2 ->
+                                resp2.body()
+                                    .onFailure(error -> promise.fail(error.getMessage()))
+                                    .onSuccess(buffer -> {
+                                        System.out.println(buffer);
+                                        resp.setStatusCode(resp2.statusCode());
+                                        resp.write(buffer);
+                                        promise.complete();
+                                    })
+                            );
+                    })
+            );
 
             promise.future().onComplete(ar -> {
                 if (ar.failed()) {
