@@ -1,6 +1,9 @@
 package com.aruistar.geekwalk;
 
 import io.vertx.core.AbstractVerticle;
+import io.vertx.core.Future;
+import io.vertx.core.Promise;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
 
 public class ProxyVerticle extends AbstractVerticle {
@@ -19,68 +22,82 @@ public class ProxyVerticle extends AbstractVerticle {
 
         server.requestHandler(req -> {
             HttpServerResponse resp = req.response();
-
             resp.setChunked(true);
 
-//            client.request(req.method(), req.uri()).compose(req2 -> {
-//                System.out.println(req.isEnded());
-//                return null;
-//            });
+            Promise<Void> promise = Promise.promise();
 
-            client.request(req.method(), req.uri(), ar -> {
-                if (ar.succeeded()) {
-                    HttpClientRequest req2 = ar.result();
-
-                    req2.setChunked(true);
-
-                    req.headers().forEach(entry -> {
-                        if (entry.getKey().equals("Content-Type")) {
-                            req2.putHeader(entry.getKey(), entry.getValue());
-                        }
-                    });
-
-                    req2.response(ar2 -> {
-                        if (ar2.succeeded()) {
-                            HttpClientResponse resp2 = ar2.result();
-
-                            resp.setStatusCode(resp2.statusCode());
-                            resp2.handler(x -> {
-                                System.out.println(x.toString());
-                                resp.write(x);
+            req.bodyHandler(body -> {
+                client.request(req.method(), req.uri())
+                        .onFailure(error -> promise.fail(error.getMessage()))
+                        .onSuccess(req2 -> {
+                            req.headers().forEach(entry -> {
+                                if (entry.getKey().equals("Content-Type")) {
+                                    req2.putHeader(entry.getKey(), entry.getValue());
+                                }
                             });
-
-                            resp2.endHandler(x -> {
-                                resp.end();
-                            });
-                        } else {
-                            ar2.cause().printStackTrace();
-                            resp.setStatusCode(500).end(ar2.cause().getMessage());
-                        }
-                    });
-
-                    if (!req.isEnded()) {
-                        req.handler(x -> {
-                            System.out.println(x.toString());
-                            req2.write(x);
+                            req2.send(body)
+                                    .onFailure(error -> promise.fail(error.getMessage())
+                                    )
+                                    .onSuccess(resp2 -> resp2.body()
+                                            .onFailure(error ->
+                                                    promise.fail(error.getMessage())
+                                            )
+                                            .onSuccess(buffer -> {
+                                                System.out.println(buffer);
+                                                resp.setStatusCode(resp2.statusCode());
+                                                resp.write(buffer);
+                                                promise.complete();
+                                            })
+                                    );
                         });
 
-                        req.endHandler(x -> {
-                            req2.end();
-                        });
-                    } else {
-                        req2.end();
-                    }
-                } else {
-                    ar.cause().printStackTrace();
-                    resp.setStatusCode(500).end(ar.cause().getMessage());
-                }
             });
 
-
+            promise.future().onComplete(ar -> {
+                if (ar.failed()) {
+                    System.out.println(ar.cause().getMessage());
+                    resp.setStatusCode(500);
+                    resp.write(ar.cause().getMessage());
+                }
+                resp.end();
+            });
         }).listen(9090, event -> {
             if (event.succeeded()) {
                 System.out.println("启动在9090端口");
             }
         });
+    }
+
+    private Future<HttpClientResponse> requestServer(HttpClient client, HttpServerRequest serverRequest, HttpServerResponse serverResponse) {
+        Promise<HttpClientResponse> promise = Promise.promise();
+
+        client.request(serverRequest.method(), serverRequest.uri(), ar -> {
+            if (ar.succeeded()) {
+                HttpClientRequest clientRequest = ar.result();
+
+                clientRequest.setChunked(true);
+                serverRequest.headers().forEach(entry -> {
+                    if (entry.getKey().equals("Content-Type")) {
+                        clientRequest.putHeader(entry.getKey(), entry.getValue());
+                    }
+                });
+
+                clientRequest.response(ar2 -> {
+                    if (ar2.succeeded()) {
+                        HttpClientResponse resp2 = ar2.result();
+                        promise.complete(resp2);
+                    } else {
+                        ar2.cause().printStackTrace();
+                        promise.fail(ar2.cause().getMessage());
+                    }
+                });
+
+            } else {
+                ar.cause().printStackTrace();
+                promise.fail(ar.cause().getMessage());
+            }
+        });
+
+        return promise.future();
     }
 }
