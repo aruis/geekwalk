@@ -11,27 +11,22 @@ public class ProxyVerticle extends AbstractVerticle {
         HttpServer server = vertx.createHttpServer(serverOptions);
 
         HttpClientOptions clientOptions = new HttpClientOptions();
-        clientOptions.setDefaultHost("127.0.0.1");
-        clientOptions.setDefaultPort(8080);
+        clientOptions.setDefaultHost("www.baidu.com");
+        clientOptions.setDefaultPort(443);
+        clientOptions.setSsl(true);
+        clientOptions.setTrustAll(true);
         clientOptions.setKeepAlive(true);
 
         HttpClient client = vertx.createHttpClient(clientOptions);
 
         server.requestHandler(req -> {
             HttpServerResponse resp = req.response();
-
+            req.pause();
             resp.setChunked(true);
-
-//            client.request(req.method(), req.uri()).compose(req2 -> {
-//                System.out.println(req.isEnded());
-//                return null;
-//            });
 
             client.request(req.method(), req.uri(), ar -> {
                 if (ar.succeeded()) {
                     HttpClientRequest req2 = ar.result();
-
-                    req2.setChunked(true);
 
                     req.headers().forEach(entry -> {
                         if (entry.getKey().equals("Content-Type")) {
@@ -39,37 +34,15 @@ public class ProxyVerticle extends AbstractVerticle {
                         }
                     });
 
-                    req2.response(ar2 -> {
-                        if (ar2.succeeded()) {
-                            HttpClientResponse resp2 = ar2.result();
-
-                            resp.setStatusCode(resp2.statusCode());
-                            resp2.handler(x -> {
-                                System.out.println(x.toString());
-                                resp.write(x);
-                            });
-
-                            resp2.endHandler(x -> {
-                                resp.end();
-                            });
-                        } else {
-                            ar2.cause().printStackTrace();
-                            resp.setStatusCode(500).end(ar2.cause().getMessage());
-                        }
+                    req2.send(req).onSuccess(resp2 -> {
+                        resp.setStatusCode(resp2.statusCode());
+                        resp2.handler(resp::write);
+                        resp.send(resp2);
+                    }).onFailure(err -> {
+                        err.printStackTrace();
+                        resp.setStatusCode(500).end(err.getMessage());
                     });
 
-                    if (!req.isEnded()) {
-                        req.handler(x -> {
-                            System.out.println(x.toString());
-                            req2.write(x);
-                        });
-
-                        req.endHandler(x -> {
-                            req2.end();
-                        });
-                    } else {
-                        req2.end();
-                    }
                 } else {
                     ar.cause().printStackTrace();
                     resp.setStatusCode(500).end(ar.cause().getMessage());

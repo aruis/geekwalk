@@ -30,7 +30,7 @@ public class ServerVerticle extends AbstractVerticle {
 
         router.errorHandler(500, rc -> {
             rc.failure().printStackTrace();
-            rc.response().setStatusCode(500).end("我错了");
+            rc.response().setStatusCode(500).end("i am wrong :" + rc.failure().getMessage());
         });
 
         server.requestHandler(router).listen(8080, event -> {
