@@ -24,7 +24,7 @@ public class ProxyVerticle extends AbstractVerticle {
 
             Promise<Void> promise = Promise.promise();
 
-            req.bodyHandler(body ->
+            req.bodyHandler(body -> {
                 client.request(req.method(), req.uri())
                     .onFailure(error -> promise.fail(error.getMessage()))
                     .onSuccess(req2 -> {
@@ -45,8 +45,9 @@ public class ProxyVerticle extends AbstractVerticle {
                                         promise.complete();
                                     })
                             );
-                    })
-            );
+                    });
+                System.out.println("handler");
+            });
 
             promise.future().onComplete(ar -> {
                 if (ar.failed()) {
@@ -56,6 +57,8 @@ public class ProxyVerticle extends AbstractVerticle {
                 }
                 resp.end();
             });
+
+            System.out.println("ended");
         }).listen(9090, event -> {
             if (event.succeeded()) {
                 System.out.println("启动在9090端口");
