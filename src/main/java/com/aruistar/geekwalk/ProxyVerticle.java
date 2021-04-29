@@ -36,7 +36,7 @@ public class ProxyVerticle extends AbstractVerticle {
 
             for (Upstream upstream : upstreamList) {
                 if (path.startsWith(upstream.getPrefix())) {
-                    String uri = req.uri().replace(upstream.getPrefix(), upstream.getPath());
+                    String uri = req.uri().replaceFirst(upstream.getPrefix(), upstream.getPath());
 
                     upstream.getClient().request(req.method(), uri, ar -> {
                         if (ar.succeeded()) {
