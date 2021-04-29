@@ -10,10 +10,10 @@ Content-Type: application/json
 
 ###
 
-GET http://localhost:9090/hello
+GET http://localhost:9091/a/hello?x=1
 
 ###
-POST http://localhost:9090/hello
+POST http://localhost:9091/hello
 Content-Type: application/json
 
 {
