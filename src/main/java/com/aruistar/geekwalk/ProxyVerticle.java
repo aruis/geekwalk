@@ -11,18 +11,17 @@ public class ProxyVerticle extends AbstractVerticle {
         HttpServer server = vertx.createHttpServer(serverOptions);
 
         HttpClientOptions clientOptions = new HttpClientOptions();
-        clientOptions.setDefaultHost("www.baidu.com");
-        clientOptions.setDefaultPort(443);
-        clientOptions.setSsl(true);
-        clientOptions.setTrustAll(true);
-        clientOptions.setKeepAlive(true);
+        clientOptions.setDefaultHost("127.0.0.1");
+        clientOptions.setDefaultPort(8080);
+//        clientOptions.setSsl(true);
+//        clientOptions.setTrustAll(true);
+//        clientOptions.setKeepAlive(true);
 
         HttpClient client = vertx.createHttpClient(clientOptions);
 
         server.requestHandler(req -> {
             HttpServerResponse resp = req.response();
             req.pause();
-            resp.setChunked(true);
 
             client.request(req.method(), req.uri(), ar -> {
                 if (ar.succeeded()) {
