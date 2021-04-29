@@ -36,7 +36,6 @@ public class ProxyVerticle extends AbstractVerticle {
 
                     req2.send(req).onSuccess(resp2 -> {
                         resp.setStatusCode(resp2.statusCode());
-                        resp2.handler(resp::write);
                         resp.send(resp2);
                     }).onFailure(err -> {
                         err.printStackTrace();
