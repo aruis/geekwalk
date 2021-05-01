@@ -14,11 +14,9 @@ import java.util.List;
 public class ProxyVerticle extends AbstractVerticle {
     @Override
     public void start() throws Exception {
-        vertx.deployVerticle(new ServerVerticle());
-
         int port = config().getInteger("port");
 
-        List<Upstream> upstreamList = new ArrayList();
+        List<Upstream> upstreamList = new ArrayList<>();
 
         config().getJsonArray("upstream").forEach(json -> {
             upstreamList.add(new Upstream((JsonObject) json, vertx));

@@ -1,6 +1,7 @@
 package com.aruistar.geekwalk;
 
 import io.vertx.core.AbstractVerticle;
+import io.vertx.core.Promise;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
@@ -10,7 +11,7 @@ import io.vertx.ext.web.handler.BodyHandler;
 
 public class ServerVerticle extends AbstractVerticle {
     @Override
-    public void start() throws Exception {
+    public void start(Promise<Void> startPromise) throws Exception {
         HttpServer server = vertx.createHttpServer();
 
         Router router = Router.router(vertx);
@@ -41,6 +42,7 @@ public class ServerVerticle extends AbstractVerticle {
             if (event.succeeded()) {
                 System.out.println("启动在8080端口");
             }
+            startPromise.complete();
         });
 
     }

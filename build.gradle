@@ -1,5 +1,6 @@
 plugins {
     id 'java'
+    id 'groovy'
     id 'application'
     id "com.github.johnrengelman.shadow" version "5.2.0"
 }
@@ -34,6 +35,12 @@ dependencies {
     implementation("io.vertx:vertx-core:$vertxVersion")
     implementation("io.vertx:vertx-web:$vertxVersion")
     implementation("io.vertx:vertx-web-client:$vertxVersion")
+
+    testImplementation("org.codehaus.groovy:groovy:3.0.8")
+    testImplementation("org.codehaus.groovy:groovy-json:3.0.8")
+
+    testImplementation("org.assertj:assertj-core:3.19.0")
+    testImplementation("io.vertx:vertx-junit5:$vertxVersion")
 }
 
 //java {
