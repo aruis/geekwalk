@@ -1,0 +1,1 @@
+println "z  ".isBlank()

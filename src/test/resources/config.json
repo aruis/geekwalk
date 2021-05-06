@@ -1,0 +1,24 @@
+{
+  "port": 9090,
+  "frontend": [
+    {
+      "prefix": "/web1",
+      "dir": "/Users/liurui/develop/workspace-github/geekwalk/src/test/resources/web1",
+      "reroute404": "/web1"
+    },
+    {
+      "prefix": "/web2",
+      "dir": "/Users/liurui/develop/workspace-github/geekwalk/src/test/resources/web2"
+    }
+  ],
+  "upstream": [
+    {
+      "prefix": "/a",
+      "url": "http://127.0.0.1:8080/a"
+    },
+    {
+      "prefix": "/",
+      "url": "http://127.0.0.1:8080/"
+    }
+  ]
+}
