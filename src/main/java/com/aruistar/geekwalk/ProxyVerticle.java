@@ -3,10 +3,8 @@ package com.aruistar.geekwalk;
 import com.aruistar.geekwalk.domain.Frontend;
 import com.aruistar.geekwalk.domain.Upstream;
 import io.vertx.core.AbstractVerticle;
-import io.vertx.core.http.HttpClientRequest;
-import io.vertx.core.http.HttpServer;
-import io.vertx.core.http.HttpServerOptions;
-import io.vertx.core.http.HttpServerResponse;
+import io.vertx.core.Future;
+import io.vertx.core.http.*;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.handler.StaticHandler;
@@ -53,9 +51,14 @@ public class ProxyVerticle extends AbstractVerticle {
             err.response().setStatusCode(404).end("404");
         });
 
+//        server.webSocketHandler(websocket -> {
+//            System.out.println(websocket.path());
+//        });
+
         server.requestHandler(req -> {
             String path = req.path();
             HttpServerResponse resp = req.response();
+
 
             for (Frontend frontend : frontendList) {
                 if (path.startsWith(frontend.getPrefix())) {
@@ -70,7 +73,31 @@ public class ProxyVerticle extends AbstractVerticle {
                 if (path.startsWith(upstream.getPrefix())) {
                     String uri = req.uri().replaceFirst(upstream.getPrefix(), upstream.getPath());
 
-                    upstream.getClient().request(req.method(), uri, ar -> {
+                    HttpClient upstreamClient = upstream.getClient();
+
+                    String upgrade = req.getHeader("Upgrade");
+                    if (upgrade != null && upgrade.equals("websocket")) {
+                        Future<ServerWebSocket> fut = req.toWebSocket();
+                        fut.onSuccess(ws -> {
+                            upstreamClient.webSocket(uri).onSuccess(clientWS -> {
+                                ws.frameHandler(clientWS::writeFrame);
+                                ws.closeHandler(x -> {
+                                    clientWS.close();
+                                });
+                                clientWS.frameHandler(ws::writeFrame);
+                                clientWS.closeHandler(x -> {
+                                    ws.close();
+                                });
+                            }).onFailure(err -> {
+                                error(resp, err);
+                            });
+                        }).onFailure(err -> {
+                            error(resp, err);
+                        });
+                        return;
+                    }
+
+                    upstreamClient.request(req.method(), uri, ar -> {
                         if (ar.succeeded()) {
                             HttpClientRequest reqUpstream = ar.result();
                             reqUpstream.headers().setAll(req.headers());
@@ -81,12 +108,12 @@ public class ProxyVerticle extends AbstractVerticle {
                                 resp.send(respUpstream);
                             }).onFailure(err -> {
                                 err.printStackTrace();
-                                resp.setStatusCode(500).end(err.getMessage());
+                                error(resp, err);
                             });
 
                         } else {
                             ar.cause().printStackTrace();
-                            resp.setStatusCode(500).end(ar.cause().getMessage());
+                            error(resp, ar.cause());
                         }
                     });
                     break;
@@ -99,5 +126,9 @@ public class ProxyVerticle extends AbstractVerticle {
                 System.out.println("启动在" + port + "端口");
             }
         });
+    }
+
+    void error(HttpServerResponse resp, Throwable err) {
+        resp.setStatusCode(500).end(err.getMessage());
     }
 }
