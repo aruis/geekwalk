@@ -31,12 +31,16 @@ public class ServerVerticle extends AbstractVerticle {
 
         Router router = Router.router(vertx);
 
-        SockJSBridgeOptions opts = new SockJSBridgeOptions()
-                .addOutboundPermitted(new PermittedOptions().setAddress("feed"));
+        router.route("/websocket").handler(routingContext -> {
+            HttpServerRequest request = routingContext.request();
+            HttpServerResponse response = routingContext.response();
 
-        // Create the event bus bridge and add it to the router.
-        SockJSHandler ebHandler = SockJSHandler.create(vertx);
-        router.mountSubRouter("/eventbus", ebHandler.bridge(opts));
+            request.toWebSocket().onSuccess(ws -> {
+                ws.writeTextMessage("hello");
+            });
+
+        });
+
 
         // Create a router endpoint for the static content.
         router.route().handler(StaticHandler.create());
