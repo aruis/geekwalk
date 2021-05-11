@@ -4,6 +4,7 @@ import com.aruistar.geekwalk.domain.Frontend;
 import com.aruistar.geekwalk.domain.Upstream;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
+import io.vertx.core.MultiMap;
 import io.vertx.core.http.*;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.Router;
@@ -35,8 +36,21 @@ public class ProxyVerticle extends AbstractVerticle {
         Router router = Router.router(vertx);
         for (Frontend frontend : frontendList) {
             router.route(frontend.getPrefix())
-                    .handler(StaticHandler.create().setAllowRootFileSystemAccess(true)
-                            .setWebRoot(frontend.getDir()));
+                    .handler(rc -> {
+                        if (!frontend.isCachingEnabled()) {
+                            MultiMap headers = rc.response().headers();
+                            headers.add("Cache-Control", "no-store")
+                                    .add("Cache-Control", "no-cache");
+                        }
+
+                        rc.next();
+                    })
+                    .handler(StaticHandler.create()
+                            .setAllowRootFileSystemAccess(true)
+                            .setWebRoot(frontend.getDir())
+                            .setCachingEnabled(frontend.isCachingEnabled())
+                            .setMaxAgeSeconds(frontend.getMaxAgeSeconds())
+                    );
         }
 
         router.errorHandler(404, err -> {

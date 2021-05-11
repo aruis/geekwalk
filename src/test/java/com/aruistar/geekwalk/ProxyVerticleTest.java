@@ -80,6 +80,38 @@ public class ProxyVerticleTest {
     }
 
     @Test
+    void testFrontendWeb1Cache(Vertx vertx, VertxTestContext testContext) {
+        WebClient client = WebClient.create(vertx);
+        client.get(9090, "127.0.0.1", "/web1")
+                .expect(ResponsePredicate.SC_OK)
+                .send()
+                .onSuccess(response -> {
+                    assertThat(response.getHeader("cache-control"))
+                            .isEqualTo("public, immutable, max-age=30");
+                    testContext.completeNow();
+                })
+                .onFailure(testContext::failNow);
+
+    }
+
+    @Test
+    void testFrontendWeb1Cache2(Vertx vertx, VertxTestContext testContext) {
+        WebClient client = WebClient.create(vertx);
+        client.get(9090, "127.0.0.1", "/web2")
+                .expect(ResponsePredicate.SC_OK)
+                .send()
+                .onSuccess(response -> {
+                    assertThat(response.headers().getAll("cache-control"))
+                            .hasSize(2);
+                    assertThat(response.headers().get("cache-control"))
+                            .containsSequence("no-");
+                    testContext.completeNow();
+                })
+                .onFailure(testContext::failNow);
+
+    }
+
+    @Test
     void testFrontendWeb2(Vertx vertx, VertxTestContext testContext) {
         WebClient client = WebClient.create(vertx);
         client.get(9090, "127.0.0.1", "/web2")

@@ -4,11 +4,14 @@
     {
       "prefix": "/web1",
       "dir": "/Users/liurui/develop/workspace-github/geekwalk/src/test/resources/web1",
-      "reroute404": "/web1"
+      "reroute404": "/web1",
+      "cachingEnabled": true,
+      "maxAgeSeconds": 30
     },
     {
       "prefix": "/web2",
-      "dir": "/Users/liurui/develop/workspace-github/geekwalk/src/test/resources/web2"
+      "dir": "/Users/liurui/develop/workspace-github/geekwalk/src/test/resources/web2",
+      "cachingEnabled": false
     }
   ],
   "upstream": [
