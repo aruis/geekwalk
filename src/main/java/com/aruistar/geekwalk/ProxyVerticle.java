@@ -121,8 +121,6 @@ public class ProxyVerticle extends AbstractVerticle {
                             reqUpstream.send(req).onSuccess(respUpstream -> {
                                 resp.setStatusCode(respUpstream.statusCode());
                                 resp.headers().setAll(respUpstream.headers());
-                                resp.headers().set("Server", "nginx/1.19.10");
-                                resp.headers().set("Connection", "keep-alive");
                                 resp.send(respUpstream);
                             }).onFailure(err -> {
                                 err.printStackTrace();
