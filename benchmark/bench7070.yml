@@ -1,0 +1,9 @@
+concurrency: 200
+base: 'http://localhost:7070'
+iterations: 10000
+rampup: 2
+
+plan:
+  - name: user_test
+    request:
+      url: /user/test

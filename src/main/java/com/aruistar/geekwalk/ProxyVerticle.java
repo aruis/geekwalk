@@ -1,5 +1,6 @@
 package com.aruistar.geekwalk;
 
+import com.aruistar.geekwalk.domain.Backend;
 import com.aruistar.geekwalk.domain.Frontend;
 import com.aruistar.geekwalk.domain.Upstream;
 import io.vertx.core.AbstractVerticle;
@@ -18,11 +19,11 @@ public class ProxyVerticle extends AbstractVerticle {
     public void start() throws Exception {
         int port = config().getInteger("port");
 
-        List<Upstream> upstreamList = new ArrayList<>();
+        List<Backend> backendList = new ArrayList<>();
         List<Frontend> frontendList = new ArrayList<>();
 
-        config().getJsonArray("upstream").forEach(json -> {
-            upstreamList.add(new Upstream((JsonObject) json, vertx));
+        config().getJsonArray("backend").forEach(json -> {
+            backendList.add(new Backend((JsonObject) json, vertx));
         });
 
         config().getJsonArray("frontend").forEach(json -> {
@@ -83,9 +84,10 @@ public class ProxyVerticle extends AbstractVerticle {
 
             req.pause();
 
-            for (Upstream upstream : upstreamList) {
-                if (path.startsWith(upstream.getPrefix())) {
-                    String uri = req.uri().replaceFirst(upstream.getPrefix(), upstream.getPath());
+            for (Backend backend : backendList) {
+                if (path.startsWith(backend.getPrefix())) {
+                    Upstream upstream = backend.getUpstream();
+                    String uri = req.uri().replaceFirst(backend.getPrefix(), upstream.getPath());
 
                     HttpClient upstreamClient = upstream.getClient();
 
@@ -119,6 +121,8 @@ public class ProxyVerticle extends AbstractVerticle {
                             reqUpstream.send(req).onSuccess(respUpstream -> {
                                 resp.setStatusCode(respUpstream.statusCode());
                                 resp.headers().setAll(respUpstream.headers());
+                                resp.headers().set("Server", "nginx/1.19.10");
+                                resp.headers().set("Connection", "keep-alive");
                                 resp.send(respUpstream);
                             }).onFailure(err -> {
                                 err.printStackTrace();

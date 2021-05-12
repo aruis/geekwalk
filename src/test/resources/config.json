@@ -14,14 +14,32 @@
       "cachingEnabled": false
     }
   ],
-  "upstream": [
+  "backend": [
     {
       "prefix": "/a",
-      "url": "http://127.0.0.1:8080/a"
+      "upstream": [
+        {
+          "url": "http://127.0.0.1:8080/a",
+          "weight": 1
+        },
+        {
+          "url": "http://127.0.0.1:8080/a",
+          "weight": 1
+        }
+      ]
     },
     {
       "prefix": "/",
-      "url": "http://127.0.0.1:8080/"
+      "upstream": [
+        {
+          "url": "http://127.0.0.1:8080/a",
+          "weight": 1
+        },
+        {
+          "url": "http://127.0.0.1:8080/a",
+          "weight": 1
+        }
+      ]
     }
   ]
 }
