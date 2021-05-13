@@ -145,6 +145,7 @@ public class ProxyVerticle extends AbstractVerticle {
     }
 
     void error(HttpServerResponse resp, Throwable err) {
+        err.printStackTrace();
         resp.setStatusCode(500).end(err.getMessage());
     }
 }

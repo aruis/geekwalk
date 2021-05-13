@@ -1,11 +1,16 @@
 package com.aruistar.geekwalk;
 
 import groovy.json.JsonSlurper;
+import io.vertx.core.CompositeFuture;
 import io.vertx.core.DeploymentOptions;
+import io.vertx.core.Future;
 import io.vertx.core.Vertx;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientOptions;
+import io.vertx.core.http.HttpServer;
 import io.vertx.core.json.JsonObject;
+import io.vertx.ext.web.client.HttpResponse;
 import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.client.predicate.ResponsePredicate;
 import io.vertx.junit5.VertxExtension;
@@ -15,12 +20,15 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 @ExtendWith(VertxExtension.class)
 public class ProxyVerticleTest {
+
     @BeforeEach
     void setUp(Vertx vertx, VertxTestContext testContext) {
 
@@ -169,9 +177,72 @@ public class ProxyVerticleTest {
                 assertThat(replyBuffer.toString()).isEqualTo("hello");
                 testContext.completeNow();
             });
-            ws.exceptionHandler(testContext::failNow);
+//            ws.exceptionHandler(testContext::failNow);
+            ws.exceptionHandler(err -> {
+                err.printStackTrace();
+            });
         }).onFailure(testContext::failNow);
 
+    }
+
+    @Test
+    void testLB(Vertx vertx, VertxTestContext testContext) {
+        HttpServer server1 = vertx.createHttpServer();
+        server1.requestHandler(event -> {
+            event.response().send("b1");
+        });
+
+
+        Future<HttpServer> future1 = server1.listen(8081);
+
+        HttpServer server2 = vertx.createHttpServer();
+        server2.requestHandler(event -> {
+            event.response().send("b2");
+        });
+
+
+        Future<HttpServer> future2 = server2.listen(8082);
+
+        CompositeFuture.all(future1, future2).onSuccess(event -> {
+
+            WebClient client = WebClient.create(vertx);
+
+            int num = 1000;
+
+            List<Future> futures = new ArrayList<>();
+
+            for (int i = 0; i < num; i++) {
+                Future<HttpResponse<Buffer>> sendFuture = client.get(9090, "127.0.0.1", "/b")
+                        .expect(ResponsePredicate.SC_OK)
+                        .send();
+                futures.add(sendFuture);
+            }
+
+            CompositeFuture.all(futures).onSuccess(all -> {
+
+                List<String> bodys = new ArrayList<>();
+                for (int i = 0; i < num; i++) {
+                    Object o = all.resultAt(i);
+                    bodys.add(((HttpResponse) o).body().toString());
+                }
+
+                float b1Count = 0;
+                float b2Count = 0;
+
+                for (String body : bodys) {
+                    if (body.equals("b1")) b1Count++;
+                    if (body.equals("b2")) b2Count++;
+                }
+
+                assertThat(b1Count / b2Count).isBetween(0.9F, 1.1F);
+
+                testContext.completeNow();
+
+//                System.out.println(o);
+            });
+
+
+        });
     }
 
 }

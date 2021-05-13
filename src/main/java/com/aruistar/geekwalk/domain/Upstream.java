@@ -33,8 +33,13 @@ public class Upstream {
     HttpClient client;
 
     public Upstream(JsonObject json, Vertx vertx) {
-        this.url = json.getString("url");
-        this.weight = json.getInteger("weight");
+        this(json.getString("url"), json.getInteger("weight", 1), vertx);
+    }
+
+    public Upstream(String url, int weight, Vertx vertx) {
+
+        this.url = url;
+        this.weight = weight;
 
         try {
             URL _url = new URL(this.url);
