@@ -21,8 +21,10 @@ public class Backend {
 
     Random random = new Random();
 
-    //TODO 搞定负载均衡傻瓜版，明天看情况再说喽。
     public Upstream getUpstream() {
+        if (upstreamList.size() == 1) {
+            return upstreamList.get(0);
+        }
         return _upstreamList.get(random.nextInt(_upstreamList.size()));
     }
 
