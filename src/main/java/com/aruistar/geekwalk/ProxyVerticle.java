@@ -95,16 +95,21 @@ public class ProxyVerticle extends AbstractVerticle {
                     if (upgrade != null && upgrade.equals("websocket")) {
                         Future<ServerWebSocket> fut = req.toWebSocket();
                         fut.onSuccess(ws -> {
-                            upstreamClient.webSocket(uri).onSuccess(clientWS -> {
-                                ws.frameHandler(clientWS::writeFrame);
-                                ws.closeHandler(x -> {
-                                    clientWS.close();
-                                });
-                                clientWS.frameHandler(ws::writeFrame);
-                                clientWS.closeHandler(x -> {
-                                    ws.close();
-                                });
-                            }).onFailure(err -> {
+                            WebSocketConnectOptions webSocketConnectOptions = new WebSocketConnectOptions();
+                            webSocketConnectOptions.setURI(uri);
+                            webSocketConnectOptions.setHeaders(req.headers().remove("host"));
+
+                            upstreamClient.webSocket(webSocketConnectOptions)
+                                    .onSuccess(clientWS -> {
+                                        ws.frameHandler(clientWS::writeFrame);
+                                        ws.closeHandler(x -> {
+                                            clientWS.close();
+                                        });
+                                        clientWS.frameHandler(ws::writeFrame);
+                                        clientWS.closeHandler(x -> {
+                                            ws.close();
+                                        });
+                                    }).onFailure(err -> {
                                 error(resp, err);
                             });
                         }).onFailure(err -> {
@@ -116,7 +121,7 @@ public class ProxyVerticle extends AbstractVerticle {
                     upstreamClient.request(req.method(), uri, ar -> {
                         if (ar.succeeded()) {
                             HttpClientRequest reqUpstream = ar.result();
-                            reqUpstream.headers().setAll(req.headers());
+                            reqUpstream.headers().setAll(req.headers().remove("host"));
 
                             reqUpstream.send(req).onSuccess(respUpstream -> {
                                 resp.setStatusCode(respUpstream.statusCode());
