@@ -13,7 +13,7 @@
 * [x] websocket反向代理追加单元测试 
 * [x] 压力测试一波，对比下Nginx
 * [x] 反向代理支持负载均衡
-* [ ] 支持UI配置 [持续进行中](https://github.com/aruis/geekwalkui)
+* [x] 支持UI配置 [持续进行中](https://github.com/aruis/geekwalkui)
 * [ ] 日志及统计
 
 
