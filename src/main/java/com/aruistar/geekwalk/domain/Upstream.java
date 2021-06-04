@@ -55,6 +55,7 @@ public class Upstream {
             if (_url.getProtocol().equals("https")) {
                 clientOptions.setSsl(true);
                 clientOptions.setTrustAll(true);
+                clientOptions.setDefaultPort(443);
             }
 
             this.client = vertx.createHttpClient(clientOptions);
