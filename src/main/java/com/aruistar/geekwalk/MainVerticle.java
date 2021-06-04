@@ -11,6 +11,7 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.handler.BodyHandler;
 import io.vertx.ext.web.handler.CorsHandler;
+import io.vertx.ext.web.handler.StaticHandler;
 
 public class MainVerticle extends AbstractVerticle {
 
@@ -51,26 +52,17 @@ public class MainVerticle extends AbstractVerticle {
                                 response.end(deployVerticleID);
                             })
                             .onFailure(err -> {
+                                err.printStackTrace();
                                 response.setStatusCode(500).end(err.getMessage());
                             });
 
 
                 });
 
-        router.route("/")
-                .produces("application/json")
-                .handler(routingContext -> {
-                    HttpServerRequest request = routingContext.request();
-                    HttpServerResponse response = routingContext.response();
+        router.route().handler(StaticHandler.create());
 
-
-                    response.end(new JsonObject().put("test", "ok").toString());
-
-
-                });
-
-        server.requestHandler(router).listen(8888, event -> {
-            if (event.succeeded()) {
+        server.requestHandler(router).listen(8888, serverAsyncResult -> {
+            if (serverAsyncResult.succeeded()) {
                 System.out.println("启动在8888端口");
             }
         });

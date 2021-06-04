@@ -6,6 +6,7 @@ import com.aruistar.geekwalk.domain.Upstream;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
 import io.vertx.core.MultiMap;
+import io.vertx.core.Promise;
 import io.vertx.core.http.*;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.Router;
@@ -15,8 +16,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ProxyVerticle extends AbstractVerticle {
+
     @Override
-    public void start() throws Exception {
+    public void start(Promise<Void> startPromise) throws Exception {
         int port = config().getInteger("port");
 
         List<Backend> backendList = new ArrayList<>();
@@ -140,13 +142,19 @@ public class ProxyVerticle extends AbstractVerticle {
                     break;
                 }
             }
-
-
         }).listen(port, event -> {
             if (event.succeeded()) {
                 System.out.println("启动在" + port + "端口");
+                startPromise.complete();
+            } else {
+                startPromise.fail(event.cause());
             }
         });
+    }
+
+    @Override
+    public void stop() throws Exception {
+        System.out.println("ProxyVerticle Stop.");
     }
 
     void error(HttpServerResponse resp, Throwable err) {
