@@ -38,7 +38,7 @@ public class ProxyVerticle extends AbstractVerticle {
 
         Router router = Router.router(vertx);
         for (Frontend frontend : frontendList) {
-            router.route(frontend.getPrefix())
+            router.route(frontend.getPrefix() + "/*")
                     .handler(rc -> {
                         if (!frontend.isCachingEnabled()) {
                             MultiMap headers = rc.response().headers();

@@ -120,6 +120,21 @@ public class ProxyVerticleTest {
     }
 
     @Test
+    void testFrontendWeb1TestHTML(Vertx vertx, VertxTestContext testContext) {
+        WebClient client = WebClient.create(vertx);
+        client.get(9090, "127.0.0.1", "/web1/test.html")
+                .expect(ResponsePredicate.SC_OK)
+                .send()
+                .onSuccess(response -> {
+                    System.out.println(response.bodyAsString());
+                    assertThat(response.bodyAsString()).isEqualTo("<h1>test</h1>\r\n");
+                    testContext.completeNow();
+                })
+                .onFailure(testContext::failNow);
+
+    }
+
+    @Test
     void testFrontendWeb2(Vertx vertx, VertxTestContext testContext) {
         WebClient client = WebClient.create(vertx);
         client.get(9090, "127.0.0.1", "/web2")
