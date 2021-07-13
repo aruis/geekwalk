@@ -8,9 +8,12 @@ import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.json.JsonObject;
+import io.vertx.ext.bridge.PermittedOptions;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.handler.BodyHandler;
 import io.vertx.ext.web.handler.StaticHandler;
+import io.vertx.ext.web.handler.sockjs.SockJSBridgeOptions;
+import io.vertx.ext.web.handler.sockjs.SockJSHandler;
 
 import java.text.DateFormat;
 import java.time.Instant;
@@ -38,6 +41,13 @@ public class ServerVerticle extends AbstractVerticle {
 
         });
 
+        SockJSBridgeOptions opts = new SockJSBridgeOptions()
+//                .addInboundPermitted(new PermittedOptions().setAddress("feed"))
+                .addOutboundPermitted(new PermittedOptions().setAddress("feed"));
+
+        SockJSHandler ebHandler = SockJSHandler.create(vertx);
+        router.mountSubRouter("/eventbus", ebHandler.bridge(opts));
+
 
         // Create a router endpoint for the static content.
         router.route().handler(StaticHandler.create());
@@ -49,7 +59,7 @@ public class ServerVerticle extends AbstractVerticle {
             // Create a timestamp string
             String timestamp = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.MEDIUM).format(Date.from(Instant.now()));
 
-            eb.send("feed", new JsonObject().put("now", timestamp));
+            eb.publish("feed", new JsonObject().put("now", timestamp));
         });
 
         router.get("/a/hello").handler(routingContext -> {
