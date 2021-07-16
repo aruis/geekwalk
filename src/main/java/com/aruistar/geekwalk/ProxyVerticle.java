@@ -99,7 +99,11 @@ public class ProxyVerticle extends AbstractVerticle {
                         fut.onSuccess(ws -> {
                             WebSocketConnectOptions webSocketConnectOptions = new WebSocketConnectOptions();
                             webSocketConnectOptions.setURI(uri);
-                            webSocketConnectOptions.setHeaders(req.headers().remove("host"));
+                            webSocketConnectOptions.setHeaders(
+                                    req.headers()
+                                            .remove("host")
+                                            .remove("sec-websocket-extensions")
+                            );
 
                             upstreamClient.webSocket(webSocketConnectOptions)
                                     .onSuccess(clientWS -> {
