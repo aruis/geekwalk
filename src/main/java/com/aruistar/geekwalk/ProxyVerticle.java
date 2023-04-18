@@ -102,8 +102,9 @@ public class ProxyVerticle extends AbstractVerticle {
                             webSocketConnectOptions.setHeaders(
                                     req.headers()
                                             .remove("host")
-                                            .remove("sec-websocket-extensions")
+//                                            .remove("sec-websocket-extensions")
                             );
+
 
                             upstreamClient.webSocket(webSocketConnectOptions)
                                     .onSuccess(clientWS -> {

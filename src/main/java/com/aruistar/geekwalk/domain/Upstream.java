@@ -51,6 +51,7 @@ public class Upstream {
             clientOptions.setDefaultHost(host);
             clientOptions.setDefaultPort(port);
             clientOptions.setKeepAlive(true);
+            clientOptions.setTryUsePerMessageWebSocketCompression(true);
 
             if (_url.getProtocol().equals("https")) {
                 clientOptions.setSsl(true);

@@ -222,7 +222,7 @@ public class ProxyVerticleTest {
 
             WebClient client = WebClient.create(vertx);
 
-            int num = 1000;
+            int num = 5000;
 
             List<Future> futures = new ArrayList<>();
 
